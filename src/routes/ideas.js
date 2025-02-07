@@ -11,7 +11,9 @@ router.get('/', async (req, res) => {
 // Create a new idea
 router.post('/', async (req, res) => {
     const { idea } = req.body;
-    const newIdea = new Idea({ idea, userCreate: req.uniqueIdentifier });
+    const addresses = req.uniqueIdentifier;
+    const fullAddress = `${addresses[0]} | ${addresses[1]}` 
+    const newIdea = new Idea({ idea, userCreate: fullAddress });
     await newIdea.save();
     res.status(201).json(newIdea);
 });
@@ -19,16 +21,18 @@ router.post('/', async (req, res) => {
 // Vote on an idea
 router.post('/:id/vote', async (req, res) => {
     const { id } = req.params;
+    const addresses = req.uniqueIdentifier;
+    const fullAddress = `${addresses[0]} | ${addresses[1]}`
     const { direction } = req.body;
     const idea = await Idea.findById(id);
 
     if (!idea) return res.status(404).json({ message: 'Idea not found' });
 
-    if (idea.userCreate === req.uniqueIdentifier) {
+    if (idea.userCreate === fullAddress) {
         return res.status(400).json({ message: 'Cannot vote on your own idea' });
     }
 
-    if (idea.voters.includes(req.uniqueIdentifier)) {
+    if (idea.voters.includes(fullAddress)) {
         return res.status(400).json({ message: 'Already voted on this idea' });
     }
 
@@ -38,7 +42,7 @@ router.post('/:id/vote', async (req, res) => {
         idea.votingDown += 1;
     }
 
-    idea.voters.push(req.uniqueIdentifier);
+    idea.voters.push(fullAddress);
     await idea.save();
     res.json(idea);
 });
